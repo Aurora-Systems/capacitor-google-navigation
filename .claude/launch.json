@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Example App (Vite Dev)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "example-app", "run", "start"],
+      "port": 5173
+    },
+    {
+      "name": "Example App (Vite Preview)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "example-app", "run", "preview"],
+      "port": 4173
+    },
+    {
+      "name": "Plugin TypeScript Watch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "watch"],
+      "port": 0
+    }
+  ]
+}
