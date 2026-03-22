@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/macbook/work/aurora/capacitor-google-navigation/.claude/worktrees/pensive-stonebraker log --oneline)",
+      "Bash(git -C /Users/macbook/work/aurora/capacitor-google-navigation/.claude/worktrees/pensive-stonebraker show 1d29ffb --stat)",
+      "Bash(git -C /Users/macbook/work/aurora/capacitor-google-navigation/.claude/worktrees/pensive-stonebraker show 1d29ffb)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install:*)",
+      "Bash(gh pr:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
