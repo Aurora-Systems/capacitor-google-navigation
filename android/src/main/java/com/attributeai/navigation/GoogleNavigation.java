@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentManager;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
+import com.google.android.libraries.navigation.ArrivalEvent;
 import com.google.android.libraries.navigation.NavigationApi;
 import com.google.android.libraries.navigation.Navigator;
 import com.google.android.libraries.navigation.Waypoint;
@@ -61,7 +62,7 @@ public class GoogleNavigation {
             return;
         }
 
-        Waypoint destination = Waypoint.builder()
+        Waypoint destination = new Waypoint.Builder()
             .setLatLng(lat, lng)
             .setTitle("Destination")
             .build();
@@ -69,17 +70,15 @@ public class GoogleNavigation {
         List<Waypoint> destinations = new ArrayList<>();
         destinations.add(destination);
 
-        navigator.setDestinations(destinations, new Navigator.RouteStatusListener() {
-            @Override
-            public void onRouteStatusResult(Navigator.RouteStatus status) {
+        navigator.setDestinations(destinations)
+            .setOnResultListener(status -> {
                 if (status == Navigator.RouteStatus.OK) {
                     navigator.startGuidance();
                     callback.onResult(true, null);
                 } else {
                     callback.onResult(false, "Route error: " + status.name());
                 }
-            }
-        });
+            });
     }
 
     public void stopNavigation() {
@@ -128,7 +127,7 @@ public class GoogleNavigation {
 
         navigator.addArrivalListener(new Navigator.ArrivalListener() {
             @Override
-            public void onArrival(Navigator.ArrivalEvent arrivalEvent) {
+            public void onArrival(ArrivalEvent arrivalEvent) {
                 Waypoint wp = arrivalEvent.getWaypoint();
                 JSObject data = new JSObject();
                 data.put("latitude", wp.getPosition().latitude);
