@@ -43,9 +43,9 @@ import GoogleNavigation
                     return
                 }
 
-                session.started = true
+                session.isStarted = true
                 self.navigationSession = session
-                session.navigator?.addListener(self)
+                session.navigator?.add(self)
 
                 let mapVC = NavigationMapViewController(session: session)
                 mapVC.modalPresentationStyle = .fullScreen
@@ -62,8 +62,8 @@ import GoogleNavigation
     func dismissNavigationViewController(completion: @escaping () -> Void) {
         DispatchQueue.main.async {
             self.mapViewController?.dismiss(animated: true) {
-                self.navigationSession?.navigator?.removeListener(self)
-                self.navigationSession?.started = false
+                self.navigationSession?.navigator?.remove(self)
+                self.navigationSession?.isStarted = false
                 self.navigationSession = nil
                 self.mapViewController = nil
                 completion()
@@ -113,7 +113,7 @@ import GoogleNavigation
 }
 
 extension GoogleNavigation: GMSNavigatorListener {
-    public func navigator(_ navigator: GMSNavigator, didArriveAtWaypoint waypoint: GMSNavigationWaypoint) {
+    public func navigator(_ navigator: GMSNavigator, didArriveAt waypoint: GMSNavigationWaypoint) {
         plugin?.notifyListeners("onArrival", data: [
             "latitude": waypoint.coordinate.latitude,
             "longitude": waypoint.coordinate.longitude,
