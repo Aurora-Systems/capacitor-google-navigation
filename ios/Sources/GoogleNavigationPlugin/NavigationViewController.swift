@@ -5,6 +5,7 @@ import GoogleNavigation
 class NavigationMapViewController: UIViewController {
     private let session: GMSNavigationSession
     private var mapView: GMSMapView?
+    private var overlayWindow: UIWindow?
     var onDismiss: (() -> Void)?
 
     init(session: GMSNavigationSession) {
@@ -26,34 +27,6 @@ class NavigationMapViewController: UIViewController {
         container.addSubview(mapView)
         self.mapView = mapView
 
-        // Overlay sits above the map and all Google-rendered UI
-        let overlay = UIView()
-        overlay.translatesAutoresizingMaskIntoConstraints = false
-        overlay.isUserInteractionEnabled = true
-        overlay.backgroundColor = .clear
-        container.addSubview(overlay)
-        NSLayoutConstraint.activate([
-            overlay.topAnchor.constraint(equalTo: container.topAnchor),
-            overlay.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            overlay.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            overlay.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-        ])
-
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "xmark"), for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        button.layer.cornerRadius = 20
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        overlay.addSubview(button)
-        NSLayoutConstraint.activate([
-            button.topAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.topAnchor, constant: 16),
-            button.leadingAnchor.constraint(equalTo: overlay.leadingAnchor, constant: 16),
-            button.widthAnchor.constraint(equalToConstant: 40),
-            button.heightAnchor.constraint(equalToConstant: 40),
-        ])
-
         self.view = container
     }
 
@@ -66,7 +39,56 @@ class NavigationMapViewController: UIViewController {
         }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        addCloseButtonWindow()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        tearDownCloseButtonWindow()
+    }
+
+    // MARK: - Close button in a top-level UIWindow above all SDK UI
+
+    private func addCloseButtonWindow() {
+        guard let scene = view.window?.windowScene else { return }
+
+        let window = UIWindow(windowScene: scene)
+        window.windowLevel = .alert + 1
+        window.backgroundColor = .clear
+        window.isHidden = false
+
+        let overlayVC = UIViewController()
+        overlayVC.view.backgroundColor = .clear
+        window.rootViewController = overlayVC
+
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "xmark"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        button.layer.cornerRadius = 20
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        overlayVC.view.addSubview(button)
+
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: overlayVC.view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            button.leadingAnchor.constraint(equalTo: overlayVC.view.leadingAnchor, constant: 16),
+            button.widthAnchor.constraint(equalToConstant: 40),
+            button.heightAnchor.constraint(equalToConstant: 40),
+        ])
+
+        self.overlayWindow = window
+    }
+
+    private func tearDownCloseButtonWindow() {
+        overlayWindow?.isHidden = true
+        overlayWindow = nil
+    }
+
     @objc private func closeTapped() {
+        tearDownCloseButtonWindow()
         dismiss(animated: true) { [weak self] in
             self?.onDismiss?()
         }

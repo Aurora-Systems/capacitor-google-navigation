@@ -1,5 +1,6 @@
 package com.attributeai.navigation;
 
+import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -25,6 +26,7 @@ import com.google.android.libraries.navigation.NavigationView;
 public class NavigationFragment extends Fragment {
 
     private NavigationView navigationView;
+    private Button closeButton;
     private Runnable onCloseListener;
 
     public static NavigationFragment newInstance() {
@@ -44,55 +46,27 @@ public class NavigationFragment extends Fragment {
     ) {
         navigationView = new NavigationView(requireContext());
         navigationView.onCreate(savedInstanceState);
-
-        FrameLayout root = new FrameLayout(requireContext());
-        root.addView(navigationView, new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ));
-
-        Button closeButton = new Button(requireContext());
-        closeButton.setText("✕");
-        closeButton.setTextColor(Color.WHITE);
-        closeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        closeButton.setTypeface(null, Typeface.BOLD);
-        closeButton.setBackgroundColor(Color.argb(153, 0, 0, 0)); // 60% black
-        closeButton.setOnClickListener(v -> {
-            if (onCloseListener != null) onCloseListener.run();
-        });
-
-        int sizePx = (int) TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 40, getResources().getDisplayMetrics()
-        );
-        int marginPx = (int) TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics()
-        );
-
-        FrameLayout.LayoutParams btnParams = new FrameLayout.LayoutParams(sizePx, sizePx);
-        btnParams.gravity = Gravity.TOP | Gravity.START;
-        btnParams.topMargin = marginPx;
-        btnParams.leftMargin = marginPx;
-        root.addView(closeButton, btnParams);
-
-        return root;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (navigationView != null) navigationView.onStart();
+        return navigationView;
     }
 
     @Override
     public void onResume() {
         super.onResume();
         if (navigationView != null) navigationView.onResume();
+        attachCloseButtonToDecorView();
     }
 
     @Override
     public void onPause() {
+        detachCloseButtonFromDecorView();
         if (navigationView != null) navigationView.onPause();
         super.onPause();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (navigationView != null) navigationView.onStart();
     }
 
     @Override
@@ -103,6 +77,7 @@ public class NavigationFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        detachCloseButtonFromDecorView();
         if (navigationView != null) navigationView.onDestroy();
         super.onDestroyView();
     }
@@ -111,5 +86,52 @@ public class NavigationFragment extends Fragment {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         if (navigationView != null) navigationView.onSaveInstanceState(outState);
+    }
+
+    // MARK: - Close button attached to the Activity decor view, above all SDK UI
+
+    private void attachCloseButtonToDecorView() {
+        Activity activity = getActivity();
+        if (activity == null || closeButton != null) return;
+
+        int sizePx = (int) TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 40, getResources().getDisplayMetrics()
+        );
+        int marginPx = (int) TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics()
+        );
+        int statusBarHeight = getStatusBarHeight(activity);
+
+        Button button = new Button(requireContext());
+        button.setText("✕");
+        button.setTextColor(Color.WHITE);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        button.setTypeface(null, Typeface.BOLD);
+        button.setBackgroundColor(Color.argb(153, 0, 0, 0));
+        button.setOnClickListener(v -> {
+            if (onCloseListener != null) onCloseListener.run();
+        });
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(sizePx, sizePx);
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.topMargin = statusBarHeight + marginPx;
+        params.leftMargin = marginPx;
+
+        ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
+        decorView.addView(button, params);
+        this.closeButton = button;
+    }
+
+    private void detachCloseButtonFromDecorView() {
+        Activity activity = getActivity();
+        if (activity == null || closeButton == null) return;
+        ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
+        decorView.removeView(closeButton);
+        closeButton = null;
+    }
+
+    private int getStatusBarHeight(Activity activity) {
+        int resourceId = activity.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        return resourceId > 0 ? activity.getResources().getDimensionPixelSize(resourceId) : 0;
     }
 }
