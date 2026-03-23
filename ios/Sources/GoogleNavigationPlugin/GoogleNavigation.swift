@@ -49,6 +49,14 @@ import GoogleNavigation
 
                 let mapVC = NavigationMapViewController(session: session)
                 mapVC.modalPresentationStyle = .fullScreen
+                mapVC.onDismiss = { [weak self] in
+                    guard let self = self else { return }
+                    self.navigationSession?.navigator?.remove(self)
+                    self.navigationSession?.isStarted = false
+                    self.navigationSession = nil
+                    self.mapViewController = nil
+                    self.plugin?.notifyListeners("onNavigationClosed", data: [:])
+                }
                 self.mapViewController = mapVC
 
                 presentingVC.present(mapVC, animated: true) {

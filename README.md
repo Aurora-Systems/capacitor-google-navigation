@@ -134,8 +134,8 @@ startNavigation({ lat, lng, travelMode })
     ↓  fires onRouteChanged on recalculation
 stopNavigation()
     ↓  ends guidance, clears destination
-showNavigationView({ show: false })
-    ↓  dismisses native map, restores app UI
+showNavigationView({ show: false })  — or user taps the ✕ close button
+    ↓  dismisses native map, fires onNavigationClosed, restores app UI
 ```
 
 ---
@@ -154,9 +154,10 @@ interface UseNavigationOptions {
   apiKey: string;
   onArrival?: (event: any) => void;
   onRouteChanged?: () => void;
+  onNavigationClosed?: () => void;
 }
 
-export function useGoogleNavigation({ apiKey, onArrival, onRouteChanged }: UseNavigationOptions) {
+export function useGoogleNavigation({ apiKey, onArrival, onRouteChanged, onNavigationClosed }: UseNavigationOptions) {
   const listeners = useRef<PluginListenerHandle[]>([]);
 
   useEffect(() => {
@@ -173,6 +174,11 @@ export function useGoogleNavigation({ apiKey, onArrival, onRouteChanged }: UseNa
 
       if (onRouteChanged) {
         const h = await GoogleNavigation.addListener('onRouteChanged', onRouteChanged);
+        listeners.current.push(h);
+      }
+
+      if (onNavigationClosed) {
+        const h = await GoogleNavigation.addListener('onNavigationClosed', onNavigationClosed);
         listeners.current.push(h);
       }
 
@@ -232,6 +238,7 @@ const NavigationPage: React.FC = () => {
     apiKey: import.meta.env.VITE_GOOGLE_NAV_API_KEY as string,
     onArrival: () => setShowArrival(true),
     onRouteChanged: () => console.log('Route recalculated'),
+    onNavigationClosed: () => console.log('User closed navigation'),
   });
 
   return (
@@ -299,6 +306,11 @@ const arrivalHandle = await GoogleNavigation.addListener('onArrival', (event) =>
 
 const routeHandle = await GoogleNavigation.addListener('onRouteChanged', () => {
   console.log('Route recalculated');
+});
+
+const closedHandle = await GoogleNavigation.addListener('onNavigationClosed', () => {
+  // Fired when the user taps the ✕ close button on the native navigation view
+  console.log('Navigation closed by user');
 });
 
 // 2. Initialize the SDK (fires onNavigationReady when done)
@@ -400,14 +412,14 @@ Show/hide navigation view
 ### addListener(...)
 
 ```typescript
-addListener(eventName: 'onArrival' | 'onRouteChanged' | 'onNavigationReady', listenerFunc: (event: any) => void) => Promise<PluginListenerHandle>
+addListener(eventName: 'onArrival' | 'onRouteChanged' | 'onNavigationReady' | 'onNavigationClosed', listenerFunc: (event: any) => void) => Promise<PluginListenerHandle>
 ```
 
 Add listener for navigation events
 
 | Param              | Type                                                              |
 | ------------------ | ----------------------------------------------------------------- |
-| **`eventName`**    | <code>'onArrival' \| 'onRouteChanged' \| 'onNavigationReady'</code> |
+| **`eventName`**    | <code>'onArrival' \| 'onRouteChanged' \| 'onNavigationReady' \| 'onNavigationClosed'</code> |
 | **`listenerFunc`** | <code>(event: any) =&gt; void</code>                              |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
@@ -446,6 +458,7 @@ Remove all listeners
 | `onNavigationReady` | `{}` | SDK has initialized and the navigator is available |
 | `onArrival` | `{ latitude, longitude, title }` | User arrives at the destination waypoint |
 | `onRouteChanged` | `{}` | The route is recalculated (traffic, missed turn, etc.) |
+| `onNavigationClosed` | `{}` | User tapped the ✕ close button on the native navigation view (iOS) |
 
 ---
 

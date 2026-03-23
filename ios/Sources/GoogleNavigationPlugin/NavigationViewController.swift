@@ -5,6 +5,7 @@ import GoogleNavigation
 class NavigationMapViewController: UIViewController {
     private let session: GMSNavigationSession
     private var mapView: GMSMapView?
+    var onDismiss: (() -> Void)?
 
     init(session: GMSNavigationSession) {
         self.session = session
@@ -27,6 +28,32 @@ class NavigationMapViewController: UIViewController {
 
         _ = mapView.enableNavigation(with: session)
         mapView.cameraMode = .following
+
+        addCloseButton()
+    }
+
+    private func addCloseButton() {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "xmark"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        button.layer.cornerRadius = 20
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        view.addSubview(button)
+
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            button.widthAnchor.constraint(equalToConstant: 40),
+            button.heightAnchor.constraint(equalToConstant: 40)
+        ])
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true) { [weak self] in
+            self?.onDismiss?()
+        }
     }
 
     func setCameraFollowing() {
