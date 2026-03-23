@@ -15,6 +15,7 @@ import GoogleNavigation
 
     func initialize(apiKey: String, completion: @escaping (Bool, String?) -> Void) {
         DispatchQueue.main.async {
+            print("[GoogleNavigation] provideAPIKey called, key length: \(apiKey.count), prefix: \(String(apiKey.prefix(8)))...")
             GMSServices.provideAPIKey(apiKey)
             completion(true, nil)
         }
