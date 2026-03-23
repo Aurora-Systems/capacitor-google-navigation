@@ -59,16 +59,10 @@ public class GoogleNavigation {
             return;
         }
 
-        Waypoint destination;
-        try {
-            destination = new Waypoint.Builder()
-                .setLatLng(lat, lng)
-                .setTitle("Destination")
-                .build();
-        } catch (Waypoint.UnsupportedTravelModeException e) {
-            callback.onResult(false, "Unsupported travel mode");
-            return;
-        }
+        Waypoint destination = new Waypoint.Builder()
+            .setLatLng(lat, lng)
+            .setTitle("Destination")
+            .build();
 
         RoutingOptions.TravelMode mode;
         switch (travelMode) {
