@@ -57,36 +57,55 @@ The `GoogleNavigation ~> 9.0` pod is declared in the plugin's podspec and is pul
 <string>This app uses your location for navigation, including in the background.</string>
 ```
 
-### 3. Register your API key in `AppDelegate.swift`
+### 3. Register your API key
 
-The iOS SDK requires the key to be provided before any map or navigator is created.
+#### Production (recommended)
 
-```swift
-import UIKit
-import Capacitor
-import CapacitorGoogleNavigation
-import GoogleNavigation  // required for GMSServices
+Store the key in `Info.plist` under the key `GoogleNavigationAPIKey`. The plugin reads it automatically — no key needs to be passed from JS.
 
-@UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        GMSServices.provideAPIKey("YOUR_IOS_API_KEY")
-        return true
-    }
-}
+```xml
+<key>GoogleNavigationAPIKey</key>
+<string>YOUR_IOS_API_KEY</string>
 ```
 
-> You can also pass the key via `GoogleNavigation.initialize({ apiKey })` at runtime — the plugin calls `GMSServices.provideAPIKey()` for you. Either approach works; calling it in `AppDelegate` is the earlier-initialization option.
+Then call `initialize()` with no key:
+
+```ts
+await GoogleNavigation.initialize({});
+```
+
+Keep the key out of source control by injecting it at build time via an `.xcconfig` file:
+
+```
+// Config.xcconfig  (gitignored)
+GOOGLE_NAV_API_KEY = AIzaSy...
+```
+
+```xml
+<!-- Info.plist -->
+<key>GoogleNavigationAPIKey</key>
+<string>$(GOOGLE_NAV_API_KEY)</string>
+```
+
+#### Development only
+
+You can pass the key directly from JS for quick local testing. **Do not ship this in production** — the key will be visible in your compiled JS bundle.
+
+```ts
+await GoogleNavigation.initialize({ apiKey: 'YOUR_IOS_API_KEY' });
+```
+
+#### Restrict your API key
+
+In Google Cloud Console → APIs & Services → Credentials, add an **iOS app restriction** with your app's bundle ID. This ensures the key is rejected if extracted and used outside your app.
 
 ---
 
 ## Android Setup
 
 ### 1. Add the API key and permissions to `android/app/src/main/AndroidManifest.xml`
+
+The Android Navigation SDK reads the key directly from the manifest at startup — it is never passed from JS.
 
 ```xml
 <manifest>
@@ -95,13 +114,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application>
-        <!-- Required: Navigation SDK reads this at startup -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_ANDROID_API_KEY" />
+            android:value="${GOOGLE_NAV_API_KEY}" />
     </application>
 </manifest>
 ```
+
+Keep the key out of source control using `gradle.properties` (gitignored):
+
+```
+# android/gradle.properties  (gitignored)
+GOOGLE_NAV_API_KEY=AIzaSy...
+```
+
+Then in `android/app/build.gradle`, expose it to the manifest:
+
+```groovy
+android {
+    defaultConfig {
+        manifestPlaceholders = [GOOGLE_NAV_API_KEY: project.findProperty("GOOGLE_NAV_API_KEY") ?: ""]
+    }
+}
+```
+
+Restrict the key in Google Cloud Console by adding your app's **SHA-1 certificate fingerprint** and **package name** under Android app restrictions.
 
 > **Important:** On Android the Navigation SDK reads the API key from `AndroidManifest.xml` — not from the `apiKey` parameter passed to `initialize()`. The `apiKey` parameter is used on iOS only.
 

@@ -14,11 +14,17 @@ public class GoogleNavigationPlugin: CAPPlugin, CAPBridgedPlugin {
     private lazy var implementation = GoogleNavigation(plugin: self)
 
     @objc func initialize(_ call: CAPPluginCall) {
-        guard let apiKey = call.getString("apiKey"), !apiKey.isEmpty else {
-            call.reject("apiKey is required")
+        let jsKey = call.getString("apiKey") ?? ""
+        let resolvedKey = !jsKey.isEmpty
+            ? jsKey
+            : Bundle.main.object(forInfoDictionaryKey: "GoogleNavigationAPIKey") as? String ?? ""
+
+        guard !resolvedKey.isEmpty else {
+            call.reject("No API key found. Add GoogleNavigationAPIKey to Info.plist (recommended) or pass apiKey to initialize().")
             return
         }
-        implementation.initialize(apiKey: apiKey) { success, error in
+
+        implementation.initialize(apiKey: resolvedKey) { success, error in
             if let error = error {
                 call.reject(error)
             } else {
