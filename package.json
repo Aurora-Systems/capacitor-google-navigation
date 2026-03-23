@@ -1,6 +1,6 @@
 {
   "name": "capacitor-google-navigation",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Google maps turn by turn navigation for capcitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
