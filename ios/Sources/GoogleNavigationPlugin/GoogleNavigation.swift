@@ -1,10 +1,12 @@
 import Foundation
+import Capacitor
+import GoogleMaps
 import GoogleNavigation
 
 @objc public class GoogleNavigation: NSObject {
     private weak var plugin: CAPPlugin?
-    private var navViewController: GMSNavigationViewController?
-    private var navigator: GMSNavigator?
+    private var mapViewController: NavigationMapViewController?
+    private var navigationSession: GMSNavigationSession?
 
     init(plugin: CAPPlugin) {
         self.plugin = plugin
@@ -27,23 +29,45 @@ import GoogleNavigation
             return
         }
 
-        let navVC = GMSNavigationViewController()
-        navVC.modalPresentationStyle = .fullScreen
-        navVC.delegate = self
-        self.navViewController = navVC
-        self.navigator = navVC.mapView.navigator
+        DispatchQueue.main.async {
+            let options = GMSNavigationTermsAndConditionsOptions(companyName: "App")
+            GMSNavigationServices.showTermsAndConditionsDialogIfNeeded(with: options) { [weak self] termsAccepted in
+                guard let self = self else { return }
+                guard termsAccepted else {
+                    completion(false, "Navigation terms and conditions not accepted")
+                    return
+                }
 
-        presentingVC.present(navVC, animated: true) {
-            self.plugin?.notifyListeners("onNavigationReady", data: [:])
-            completion(true, nil)
+                guard let session = GMSNavigationServices.createNavigationSession() else {
+                    completion(false, "Failed to create navigation session")
+                    return
+                }
+
+                session.started = true
+                self.navigationSession = session
+                session.navigator?.addListener(self)
+
+                let mapVC = NavigationMapViewController(session: session)
+                mapVC.modalPresentationStyle = .fullScreen
+                self.mapViewController = mapVC
+
+                presentingVC.present(mapVC, animated: true) {
+                    self.plugin?.notifyListeners("onNavigationReady", data: [:])
+                    completion(true, nil)
+                }
+            }
         }
     }
 
     func dismissNavigationViewController(completion: @escaping () -> Void) {
-        navViewController?.dismiss(animated: true) {
-            self.navViewController = nil
-            self.navigator = nil
-            completion()
+        DispatchQueue.main.async {
+            self.mapViewController?.dismiss(animated: true) {
+                self.navigationSession?.navigator?.removeListener(self)
+                self.navigationSession?.started = false
+                self.navigationSession = nil
+                self.mapViewController = nil
+                completion()
+            }
         }
     }
 
@@ -53,7 +77,7 @@ import GoogleNavigation
         travelMode: String,
         completion: @escaping (Bool, String?) -> Void
     ) {
-        guard let navigator = self.navigator else {
+        guard let session = navigationSession, let navigator = session.navigator else {
             completion(false, "Navigation view must be shown before starting navigation")
             return
         }
@@ -64,19 +88,17 @@ import GoogleNavigation
             return
         }
 
-        let mode: GMSNavigationTravelMode
         switch travelMode {
-        case "WALKING": mode = .walking
-        case "CYCLING": mode = .cycling
-        case "TWO_WHEELER": mode = .twoWheeler
-        default: mode = .driving
+        case "WALKING": session.travelMode = .walking
+        case "CYCLING": session.travelMode = .cycling
+        case "TWO_WHEELER": session.travelMode = .twoWheeler
+        default: session.travelMode = .driving
         }
-        navViewController?.mapView.travelMode = mode
 
-        navigator.setDestinations([waypoint]) { routeStatus in
+        navigator.setDestinations([waypoint]) { [weak self] routeStatus in
             if routeStatus == .OK {
                 navigator.isGuidanceActive = true
-                self.navViewController?.mapView.cameraMode = .following
+                self?.mapViewController?.setCameraFollowing()
                 completion(true, nil)
             } else {
                 completion(false, "Route calculation failed: \(routeStatus.rawValue)")
@@ -85,16 +107,13 @@ import GoogleNavigation
     }
 
     func stopNavigation() {
-        navigator?.isGuidanceActive = false
-        navigator?.clearDestinations()
+        navigationSession?.navigator?.isGuidanceActive = false
+        navigationSession?.navigator?.clearDestinations()
     }
 }
 
-extension GoogleNavigation: GMSNavigationViewControllerDelegate {
-    public func navigationViewController(
-        _ navigationViewController: GMSNavigationViewController,
-        didArriveAtWaypoint waypoint: GMSNavigationWaypoint
-    ) {
+extension GoogleNavigation: GMSNavigatorListener {
+    public func navigator(_ navigator: GMSNavigator, didArriveAtWaypoint waypoint: GMSNavigationWaypoint) {
         plugin?.notifyListeners("onArrival", data: [
             "latitude": waypoint.coordinate.latitude,
             "longitude": waypoint.coordinate.longitude,
@@ -102,9 +121,7 @@ extension GoogleNavigation: GMSNavigationViewControllerDelegate {
         ])
     }
 
-    public func navigationViewControllerDidChangeRoute(
-        _ navigationViewController: GMSNavigationViewController
-    ) {
+    public func navigatorDidChangeRoute(_ navigator: GMSNavigator) {
         plugin?.notifyListeners("onRouteChanged", data: [:])
     }
 }

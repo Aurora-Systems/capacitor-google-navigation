@@ -64,7 +64,8 @@ The iOS SDK requires the key to be provided before any map or navigator is creat
 ```swift
 import UIKit
 import Capacitor
-import GoogleNavigation
+import CapacitorGoogleNavigation
+import GoogleNavigation  // required for GMSServices
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -478,6 +479,17 @@ Add both `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUse
 
 **CocoaPods not found / pod install fails**
 Make sure CocoaPods is installed (`sudo gem install cocoapods`) and run `npx cap sync` before `pod install`.
+
+**iOS — `cap sync` fails with "transitive dependencies that include statically linked binaries"**
+The GoogleNavigation SDK is distributed as a static XCFramework, which conflicts with the default dynamic `use_frameworks!` directive. In your app's `ios/App/Podfile`, change:
+```ruby
+use_frameworks!
+```
+to:
+```ruby
+use_frameworks! :linkage => :static
+```
+Then re-run `pod install` and `npx cap sync`.
 
 ---
 
