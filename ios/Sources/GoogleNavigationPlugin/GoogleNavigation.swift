@@ -109,7 +109,19 @@ import GoogleNavigation
                 self?.mapViewController?.setCameraFollowing()
                 completion(true, nil)
             } else {
-                completion(false, "Route calculation failed: \(routeStatus.rawValue)")
+                let reason: String
+                switch routeStatus {
+                case .apiKeyNotAuthorized:  reason = "API key not authorized for Navigation SDK"
+                case .networkError:         reason = "Network error — check internet connection"
+                case .noRouteFound:         reason = "No route found to destination"
+                case .locationUnavailable:  reason = "Location unavailable — check permissions"
+                case .quotaExceeded:        reason = "API quota exceeded"
+                case .waypointError:        reason = "Invalid waypoint coordinates"
+                case .travelModeUnsupported: reason = "Travel mode not supported"
+                case .canceled:             reason = "Route request was canceled"
+                default:                    reason = "Unknown error (code \(routeStatus.rawValue))"
+                }
+                completion(false, "Route calculation failed: \(reason)")
             }
         }
     }

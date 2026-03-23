@@ -118,6 +118,10 @@ public class GoogleNavigation {
         }
 
         NavigationFragment fragment = NavigationFragment.newInstance();
+        fragment.setOnCloseListener(() -> {
+            fm.beginTransaction().remove(fragment).commitAllowingStateLoss();
+            plugin.fireEvent("onNavigationClosed", new JSObject());
+        });
         fm.beginTransaction()
             .add(android.R.id.content, fragment, FRAGMENT_TAG)
             .commitAllowingStateLoss();

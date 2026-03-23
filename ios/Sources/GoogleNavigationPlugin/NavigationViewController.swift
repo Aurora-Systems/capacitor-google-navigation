@@ -16,18 +16,22 @@ class NavigationMapViewController: UIViewController {
         fatalError("init(coder:) not supported")
     }
 
+    override func loadView() {
+        let options = GMSMapViewOptions()
+        options.frame = UIScreen.main.bounds
+        let mapView = GMSMapView(options: options)
+        self.mapView = mapView
+        self.view = mapView
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let options = GMSMapViewOptions()
-        options.frame = view.bounds
-        let mapView = GMSMapView(options: options)
-        mapView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(mapView)
-        self.mapView = mapView
-
-        _ = mapView.enableNavigation(with: session)
-        mapView.cameraMode = .following
+        guard let mapView = mapView else { return }
+        let enabled = mapView.enableNavigation(with: session)
+        if enabled {
+            mapView.cameraMode = .following
+        }
 
         addCloseButton()
     }
