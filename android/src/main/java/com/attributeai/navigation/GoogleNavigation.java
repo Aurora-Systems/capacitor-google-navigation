@@ -9,8 +9,10 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
 import com.google.android.libraries.navigation.NavigationApi;
 import com.google.android.libraries.navigation.Navigator;
-import com.google.android.libraries.navigation.RoutingOptions;
 import com.google.android.libraries.navigation.Waypoint;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GoogleNavigation {
 
@@ -59,30 +61,25 @@ public class GoogleNavigation {
             return;
         }
 
-        Waypoint destination = new Waypoint.Builder()
+        Waypoint destination = Waypoint.builder()
             .setLatLng(lat, lng)
             .setTitle("Destination")
             .build();
 
-        int mode;
-        switch (travelMode) {
-            case "WALKING": mode = RoutingOptions.TravelMode.WALKING; break;
-            case "CYCLING": mode = RoutingOptions.TravelMode.CYCLING; break;
-            case "TWO_WHEELER": mode = RoutingOptions.TravelMode.TWO_WHEELER; break;
-            default: mode = RoutingOptions.TravelMode.DRIVING; break;
-        }
+        List<Waypoint> destinations = new ArrayList<>();
+        destinations.add(destination);
 
-        RoutingOptions routingOptions = new RoutingOptions().travelMode(mode);
-
-        navigator.setDestination(destination, routingOptions)
-            .setOnResultListener(status -> {
+        navigator.setDestinations(destinations, new Navigator.RouteStatusListener() {
+            @Override
+            public void onRouteStatusResult(Navigator.RouteStatus status) {
                 if (status == Navigator.RouteStatus.OK) {
                     navigator.startGuidance();
                     callback.onResult(true, null);
                 } else {
                     callback.onResult(false, "Route error: " + status.name());
                 }
-            });
+            }
+        });
     }
 
     public void stopNavigation() {
@@ -129,17 +126,23 @@ public class GoogleNavigation {
     private void attachListeners() {
         if (navigator == null) return;
 
-        navigator.addArrivalListener(arrivalEvent -> {
-            Waypoint wp = arrivalEvent.getWaypoint();
-            JSObject data = new JSObject();
-            data.put("latitude", wp.getPosition().latitude);
-            data.put("longitude", wp.getPosition().longitude);
-            data.put("title", wp.getTitle());
-            plugin.fireEvent("onArrival", data);
+        navigator.addArrivalListener(new Navigator.ArrivalListener() {
+            @Override
+            public void onArrival(Navigator.ArrivalEvent arrivalEvent) {
+                Waypoint wp = arrivalEvent.getWaypoint();
+                JSObject data = new JSObject();
+                data.put("latitude", wp.getPosition().latitude);
+                data.put("longitude", wp.getPosition().longitude);
+                data.put("title", wp.getTitle());
+                plugin.fireEvent("onArrival", data);
+            }
         });
 
-        navigator.addRouteChangedListener(() -> {
-            plugin.fireEvent("onRouteChanged", new JSObject());
+        navigator.addRouteChangedListener(new Navigator.RouteChangedListener() {
+            @Override
+            public void onRouteChanged() {
+                plugin.fireEvent("onRouteChanged", new JSObject());
+            }
         });
     }
 }
