@@ -490,6 +490,27 @@ The Android Navigation SDK validates the API key from `AndroidManifest.xml`. Ens
 **iOS — "This app has attempted to access privacy-sensitive data"**
 Add both `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription` to `Info.plist` before calling `initialize()`.
 
+**iOS — App crashes with "Invalid parameter not satisfying: CLClientIsBackgroundable"**
+The Navigation SDK requires background location capability to track position during guidance. In Xcode:
+1. Select your app target → **Signing & Capabilities** → **+ Capability** → **Background Modes**
+2. Check **Location updates**
+
+Also ensure all three keys are present in `Info.plist`:
+```xml
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>This app uses your location for navigation.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>This app uses your location for navigation, including in the background.</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>This app uses your location for navigation, including in the background.</string>
+```
+
+**iOS — "This application has been blocked by the Google Navigation SDK"**
+The Navigation SDK requires explicit enrollment — it is not available to all Google Cloud projects by default. Ensure:
+1. The **Navigation SDK for iOS** is enabled under APIs & Services → Library in Google Cloud Console
+2. Your project has been granted access (you may need to request it via the [Navigation SDK get started page](https://developers.google.com/maps/documentation/navigation/ios-sdk/get-started))
+3. Billing is active on the project
+
 **CocoaPods not found / pod install fails**
 Make sure CocoaPods is installed (`sudo gem install cocoapods`) and run `npx cap sync` before `pod install`.
 

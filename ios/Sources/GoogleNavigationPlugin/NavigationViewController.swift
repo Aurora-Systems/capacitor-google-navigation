@@ -17,26 +17,28 @@ class NavigationMapViewController: UIViewController {
     }
 
     override func loadView() {
+        let container = UIView(frame: UIScreen.main.bounds)
+
         let options = GMSMapViewOptions()
-        options.frame = UIScreen.main.bounds
+        options.frame = container.bounds
         let mapView = GMSMapView(options: options)
+        mapView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.addSubview(mapView)
         self.mapView = mapView
-        self.view = mapView
-    }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+        // Overlay sits above the map and all Google-rendered UI
+        let overlay = UIView()
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        overlay.isUserInteractionEnabled = true
+        overlay.backgroundColor = .clear
+        container.addSubview(overlay)
+        NSLayoutConstraint.activate([
+            overlay.topAnchor.constraint(equalTo: container.topAnchor),
+            overlay.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            overlay.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+        ])
 
-        guard let mapView = mapView else { return }
-        let enabled = mapView.enableNavigation(with: session)
-        if enabled {
-            mapView.cameraMode = .following
-        }
-
-        addCloseButton()
-    }
-
-    private func addCloseButton() {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "xmark"), for: .normal)
         button.tintColor = .white
@@ -44,14 +46,24 @@ class NavigationMapViewController: UIViewController {
         button.layer.cornerRadius = 20
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        view.addSubview(button)
-
+        overlay.addSubview(button)
         NSLayoutConstraint.activate([
-            button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            button.topAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.topAnchor, constant: 16),
+            button.leadingAnchor.constraint(equalTo: overlay.leadingAnchor, constant: 16),
             button.widthAnchor.constraint(equalToConstant: 40),
-            button.heightAnchor.constraint(equalToConstant: 40)
+            button.heightAnchor.constraint(equalToConstant: 40),
         ])
+
+        self.view = container
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        guard let mapView = mapView else { return }
+        let enabled = mapView.enableNavigation(with: session)
+        if enabled {
+            mapView.cameraMode = .following
+        }
     }
 
     @objc private func closeTapped() {
