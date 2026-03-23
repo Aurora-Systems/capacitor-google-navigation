@@ -64,7 +64,7 @@ public class GoogleNavigation {
             .setTitle("Destination")
             .build();
 
-        RoutingOptions.TravelMode mode;
+        int mode;
         switch (travelMode) {
             case "WALKING": mode = RoutingOptions.TravelMode.WALKING; break;
             case "CYCLING": mode = RoutingOptions.TravelMode.CYCLING; break;
@@ -72,23 +72,17 @@ public class GoogleNavigation {
             default: mode = RoutingOptions.TravelMode.DRIVING; break;
         }
 
-        RoutingOptions routingOptions = new RoutingOptions.Builder()
-            .travelMode(mode)
-            .build();
+        RoutingOptions routingOptions = new RoutingOptions().travelMode(mode);
 
-        navigator.setDestination(destination, routingOptions,
-            new Navigator.RouteStatusListener() {
-                @Override
-                public void onRouteStatusResult(Navigator.RouteStatus status) {
-                    if (status == Navigator.RouteStatus.OK) {
-                        navigator.startGuidance();
-                        callback.onResult(true, null);
-                    } else {
-                        callback.onResult(false, "Route error: " + status.name());
-                    }
+        navigator.setDestination(destination, routingOptions)
+            .setOnResultListener(status -> {
+                if (status == Navigator.RouteStatus.OK) {
+                    navigator.startGuidance();
+                    callback.onResult(true, null);
+                } else {
+                    callback.onResult(false, "Route error: " + status.name());
                 }
-            }
-        );
+            });
     }
 
     public void stopNavigation() {
@@ -135,11 +129,12 @@ public class GoogleNavigation {
     private void attachListeners() {
         if (navigator == null) return;
 
-        navigator.addArrivalListener(waypoint -> {
+        navigator.addArrivalListener(arrivalEvent -> {
+            Waypoint wp = arrivalEvent.getWaypoint();
             JSObject data = new JSObject();
-            data.put("latitude", waypoint.getPosition().latitude);
-            data.put("longitude", waypoint.getPosition().longitude);
-            data.put("title", waypoint.getTitle());
+            data.put("latitude", wp.getPosition().latitude);
+            data.put("longitude", wp.getPosition().longitude);
+            data.put("title", wp.getTitle());
             plugin.fireEvent("onArrival", data);
         });
 
