@@ -548,6 +548,37 @@ The Navigation SDK requires explicit enrollment — it is not available to all G
 2. Your project has been granted access (you may need to request it via the [Navigation SDK get started page](https://developers.google.com/maps/documentation/navigation/ios-sdk/get-started))
 3. Billing is active on the project
 
+**Android — `Duplicate class` build error**
+The Navigation SDK bundles Maps SDK and Location classes internally. Do not add `play-services-maps` or `play-services-location` as separate dependencies in your app or any plugin — they will conflict with the classes already inside the Navigation SDK AAR and cause a dex merge failure.
+
+If you see an error like:
+```
+Duplicate class com.google.android.gms.maps.* found in modules ...
+```
+Check `android/app/build.gradle` and any plugin `build.gradle` files and remove any explicit `play-services-maps` or `play-services-location` dependencies.
+
+**Android — `core library desugaring` build error**
+The Navigation SDK requires core library desugaring to be enabled in the consuming app. If you see:
+
+```
+Dependency 'com.google.android.libraries.navigation:navigation:x.x.x' requires
+core library desugaring to be enabled for :app.
+```
+
+Add the following to your app's `android/app/build.gradle`:
+
+```groovy
+android {
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.4"
+}
+```
+
 **CocoaPods not found / pod install fails**
 Make sure CocoaPods is installed (`sudo gem install cocoapods`) and run `npx cap sync` before `pod install`.
 
