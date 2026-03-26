@@ -2,19 +2,9 @@ import UIKit
 import GoogleMaps
 import GoogleNavigation
 
-/// A transparent view that passes touches through to underlying windows,
-/// only intercepting touches that land on one of its subviews (e.g. the close button).
-private class PassthroughView: UIView {
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        let hit = super.hitTest(point, with: event)
-        return hit == self ? nil : hit
-    }
-}
-
 class NavigationMapViewController: UIViewController {
     private let session: GMSNavigationSession
     private var mapView: GMSMapView?
-    private var overlayWindow: UIWindow?
     var onDismiss: (() -> Void)?
 
     init(session: GMSNavigationSession) {
@@ -46,33 +36,12 @@ class NavigationMapViewController: UIViewController {
         if enabled {
             mapView.cameraMode = .following
         }
+        addCloseButton()
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        addCloseButtonWindow()
-    }
+    // MARK: - Close button overlaid directly on the map view
 
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        tearDownCloseButtonWindow()
-    }
-
-    // MARK: - Close button in a top-level UIWindow above all SDK UI
-
-    private func addCloseButtonWindow() {
-        guard let scene = view.window?.windowScene else { return }
-
-        let window = UIWindow(windowScene: scene)
-        window.windowLevel = .alert + 1
-        window.backgroundColor = .clear
-
-        let overlayVC = UIViewController()
-        let passthroughView = PassthroughView()
-        passthroughView.backgroundColor = .clear
-        overlayVC.view = passthroughView
-        window.rootViewController = overlayVC
-
+    private func addCloseButton() {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "xmark"), for: .normal)
         button.tintColor = .white
@@ -80,26 +49,17 @@ class NavigationMapViewController: UIViewController {
         button.layer.cornerRadius = 20
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        overlayVC.view.addSubview(button)
+        view.addSubview(button)
 
         NSLayoutConstraint.activate([
-            button.topAnchor.constraint(equalTo: overlayVC.view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            button.leadingAnchor.constraint(equalTo: overlayVC.view.leadingAnchor, constant: 16),
+            button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             button.widthAnchor.constraint(equalToConstant: 40),
             button.heightAnchor.constraint(equalToConstant: 40),
         ])
-
-        self.overlayWindow = window
-        window.isHidden = false
-    }
-
-    private func tearDownCloseButtonWindow() {
-        overlayWindow?.isHidden = true
-        overlayWindow = nil
     }
 
     @objc private func closeTapped() {
-        tearDownCloseButtonWindow()
         dismiss(animated: true) { [weak self] in
             self?.onDismiss?()
         }
