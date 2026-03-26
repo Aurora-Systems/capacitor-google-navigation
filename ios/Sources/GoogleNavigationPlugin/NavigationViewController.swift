@@ -2,6 +2,15 @@ import UIKit
 import GoogleMaps
 import GoogleNavigation
 
+/// A transparent view that passes touches through to underlying windows,
+/// only intercepting touches that land on one of its subviews (e.g. the close button).
+private class PassthroughView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        return hit == self ? nil : hit
+    }
+}
+
 class NavigationMapViewController: UIViewController {
     private let session: GMSNavigationSession
     private var mapView: GMSMapView?
@@ -60,7 +69,9 @@ class NavigationMapViewController: UIViewController {
         window.isHidden = false
 
         let overlayVC = UIViewController()
-        overlayVC.view.backgroundColor = .clear
+        let passthroughView = PassthroughView()
+        passthroughView.backgroundColor = .clear
+        overlayVC.view = passthroughView
         window.rootViewController = overlayVC
 
         let button = UIButton(type: .system)
