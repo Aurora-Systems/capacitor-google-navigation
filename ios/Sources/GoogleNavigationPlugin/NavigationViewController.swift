@@ -66,7 +66,6 @@ class NavigationMapViewController: UIViewController {
         let window = UIWindow(windowScene: scene)
         window.windowLevel = .alert + 1
         window.backgroundColor = .clear
-        window.isHidden = false
 
         let overlayVC = UIViewController()
         let passthroughView = PassthroughView()
@@ -91,6 +90,7 @@ class NavigationMapViewController: UIViewController {
         ])
 
         self.overlayWindow = window
+        window.isHidden = false
     }
 
     private func tearDownCloseButtonWindow() {
