@@ -10,6 +10,7 @@ import com.getcapacitor.Logger;
 import com.google.android.libraries.navigation.ArrivalEvent;
 import com.google.android.libraries.navigation.NavigationApi;
 import com.google.android.libraries.navigation.Navigator;
+import com.google.android.libraries.navigation.TermsAndConditionsCheckOption;
 import com.google.android.libraries.navigation.Waypoint;
 
 import java.util.ArrayList;
@@ -34,8 +35,31 @@ public class GoogleNavigation {
         // On Android, the Navigation SDK reads the API key from AndroidManifest
         // <meta-data android:name="com.google.android.geo.API_KEY" android:value="..."/>
         // The apiKey param is accepted for API consistency but not injected programmatically.
+        Activity activity = plugin.getActivity();
+
+        if (!NavigationApi.areTermsAccepted(activity.getApplication())) {
+            activity.runOnUiThread(() ->
+                NavigationApi.showTermsAndConditionsDialog(
+                    activity,
+                    activity.getApplicationInfo().loadLabel(activity.getPackageManager()).toString(),
+                    TermsAndConditionsCheckOption.ENABLED,
+                    accepted -> {
+                        if (accepted) {
+                            getNavigator(activity, callback);
+                        } else {
+                            callback.onResult(false, "User declined Navigation terms and conditions");
+                        }
+                    }
+                )
+            );
+        } else {
+            getNavigator(activity, callback);
+        }
+    }
+
+    private void getNavigator(Activity activity, Callback callback) {
         NavigationApi.getNavigator(
-            plugin.getActivity().getApplication(),
+            activity.getApplication(),
             new NavigationApi.NavigatorListener() {
                 @Override
                 public void onNavigatorReady(Navigator nav) {
