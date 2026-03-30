@@ -10,7 +10,7 @@ import com.getcapacitor.Logger;
 import com.google.android.libraries.navigation.ArrivalEvent;
 import com.google.android.libraries.navigation.NavigationApi;
 import com.google.android.libraries.navigation.Navigator;
-import com.google.android.libraries.navigation.TermsAndConditionsCheckOption;
+
 import com.google.android.libraries.navigation.Waypoint;
 
 import java.util.ArrayList;
@@ -42,7 +42,6 @@ public class GoogleNavigation {
                 NavigationApi.showTermsAndConditionsDialog(
                     activity,
                     activity.getApplicationInfo().loadLabel(activity.getPackageManager()).toString(),
-                    TermsAndConditionsCheckOption.ENABLED,
                     accepted -> {
                         if (accepted) {
                             getNavigator(activity, callback);
