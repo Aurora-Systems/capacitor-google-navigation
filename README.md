@@ -495,7 +495,7 @@ Remove all listeners
 | `onNavigationReady` | `{}` | SDK has initialized and the navigator is available |
 | `onArrival` | `{ latitude, longitude, title }` | User arrives at the destination waypoint |
 | `onRouteChanged` | `{}` | The route is recalculated (traffic, missed turn, etc.) |
-| `onNavigationClosed` | `{}` | User tapped the ✕ close button on the native navigation view (iOS) |
+| `onNavigationClosed` | `{}` | User tapped the ✕ close button on the native navigation view |
 
 ---
 
@@ -523,6 +523,9 @@ All `NavigationView` lifecycle events must be delegated — the plugin handles t
 
 **`initialize()` fails on Android**
 The Android Navigation SDK validates the API key from `AndroidManifest.xml`. Ensure the key is present and the Navigation SDK is enabled in your Google Cloud project with billing active.
+
+**Android — `initialize()` rejects with "User declined Navigation terms and conditions"**
+On first launch the plugin automatically presents Google's Navigation terms and conditions dialog. If the user taps **Decline**, `initialize()` rejects with this message. You must call `initialize()` again (e.g. when the user retries) to show the dialog again. The terms are only shown once per device — once accepted they are stored by the SDK and subsequent calls skip the dialog entirely.
 
 **iOS — "This app has attempted to access privacy-sensitive data"**
 Add both `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription` to `Info.plist` before calling `initialize()`.
