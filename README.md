@@ -582,6 +582,19 @@ dependencies {
 }
 ```
 
+**`pod install` fails with "✖ Updating iOS native dependencies with pod install - failed!"**
+This can be caused by an outdated `objectVersion` in your Xcode project file. Open `ios/App/App.xcodeproj/project.pbxproj` and find the `objectVersion` line near the top of the file. It must be set to `55`:
+
+```
+objectVersion = 55;
+```
+
+If it is set to an older value (e.g. `46` or `54`), update it to `55`, then re-run:
+
+```bash
+npx cap sync
+```
+
 **CocoaPods not found / pod install fails**
 Make sure CocoaPods is installed (`sudo gem install cocoapods`) and run `npx cap sync` before `pod install`.
 
